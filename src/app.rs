@@ -693,18 +693,22 @@ impl BinviewApp {
             return;
         };
 
-        // Top Stage Editorial Header
+        // Top Stage Editorial Header (pure typography, no pill-badge clutter)
         ui.horizontal(|ui| {
             ui.vertical(|ui| {
                 ui.spacing_mut().item_spacing.y = 2.0;
                 ui.label(
-                    RichText::new(format!("SPECIMEN  ·  {}", a.format.format_long.to_uppercase()))
-                        .monospace()
-                        .size(9.5)
-                        .color(p.ink_dim),
+                    RichText::new(format!(
+                        "{}  ·  {}",
+                        a.format.format_short,
+                        format_bytes_compact(a.size)
+                    ))
+                    .monospace()
+                    .size(9.5)
+                    .color(p.ink_dim),
                 );
-                let title_disp: String = if a.file_name.chars().count() > 34 {
-                    format!("{}…", a.file_name.chars().take(33).collect::<String>())
+                let title_disp: String = if a.file_name.chars().count() > 38 {
+                    format!("{}…", a.file_name.chars().take(37).collect::<String>())
                 } else {
                     a.file_name.clone()
                 };
@@ -712,13 +716,9 @@ impl BinviewApp {
             });
 
             ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
-                if action_btn(ui, "SAVE SVG", false, p) {
+                if action_btn(ui, "SVG", false, p) {
                     self.save_svg_poster();
                 }
-                ui.add_space(4.0);
-                stamp(ui, a.entropy_class.label(), false, p);
-                ui.add_space(2.0);
-                stamp(ui, &a.format.format_short, true, p);
             });
         });
 
