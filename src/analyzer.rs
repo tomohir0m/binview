@@ -91,14 +91,11 @@ pub struct ExtractedString {
 
 #[derive(Debug, Clone, Copy)]
 pub struct HilbertTile {
-    pub d: usize,
     pub x: usize,
     pub y: usize,
     pub start_offset: usize,
     pub end_offset: usize,
     pub entropy: f32,
-    pub null_ratio: f32,
-    pub ascii_ratio: f32,
     pub class: ByteRegionClass,
 }
 
@@ -121,11 +118,9 @@ pub struct BinaryAnalysis {
     pub digraph: Vec<f32>,
     pub digraph_counts: Vec<u64>,
     pub digraph_sample_offset: Vec<Option<usize>>,
-    pub digraph_max_count: u64,
     pub entropy_curve: Vec<f32>,
     pub byte_hist: [u64; 256],
     pub byte_hist_max: u64,
-    pub byte_first_offset: [Option<usize>; 256],
     pub hilbert_tiles: Vec<HilbertTile>,
     pub hilbert_grid: Vec<usize>, // y * HILBERT_W + x -> d
 
@@ -226,15 +221,10 @@ pub fn analyze_bytes(
     let sha1 = hex::encode(Sha1::digest(&data));
     let md5 = hex::encode(Md5::digest(&data));
 
-    // Byte frequency histogram & first-offset lookup
+    // Byte frequency histogram
     let mut byte_hist = [0u64; 256];
-    let mut byte_first_offset = [None; 256];
-    for (idx, &b) in data.iter().enumerate() {
-        let bi = b as usize;
-        byte_hist[bi] += 1;
-        if byte_first_offset[bi].is_none() {
-            byte_first_offset[bi] = Some(idx);
-        }
+    for &b in &data {
+        byte_hist[b as usize] += 1;
     }
     let byte_hist_max = byte_hist.iter().copied().max().unwrap_or(0);
 
@@ -331,11 +321,9 @@ pub fn analyze_bytes(
         digraph,
         digraph_counts,
         digraph_sample_offset,
-        digraph_max_count,
         entropy_curve,
         byte_hist,
         byte_hist_max,
-        byte_first_offset,
         hilbert_tiles,
         hilbert_grid,
         strings,
@@ -409,8 +397,8 @@ fn build_hilbert_map(data: &[u8]) -> (Vec<HilbertTile>, Vec<usize>) {
             (rx + 32, ry)
         };
 
-        let (start_offset, end_offset, entropy, null_ratio, ascii_ratio, class) = if size == 0 {
-            (0, 0, 0.0, 1.0, 0.0, ByteRegionClass::Zero)
+        let (start_offset, end_offset, entropy, class) = if size == 0 {
+            (0, 0, 0.0, ByteRegionClass::Zero)
         } else {
             let start = (d * size) / HILBERT_LEN;
             let end = (((d + 1) * size) / HILBERT_LEN).max(start + 1).min(size);
@@ -457,19 +445,16 @@ fn build_hilbert_map(data: &[u8]) -> (Vec<HilbertTile>, Vec<usize>) {
             } else {
                 ByteRegionClass::Code
             };
-            (start, end, ent, nr, ar, cls)
+            (start, end, ent, cls)
         };
 
         grid[y * HILBERT_W + x] = d;
         tiles.push(HilbertTile {
-            d,
             x,
             y,
             start_offset,
             end_offset,
             entropy,
-            null_ratio,
-            ascii_ratio,
             class,
         });
     }

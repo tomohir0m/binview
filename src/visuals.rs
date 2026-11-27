@@ -1071,8 +1071,9 @@ fn draw_mode_hilbert(
                 .unwrap_or_default();
 
             out.hover_telemetry = Some(format!(
-                "OFFSET 0x{:08X}{}  ·  H {:.2}  ·  {}  ·  CLICK TO JUMP",
+                "0x{:08X}..{:08X}{}  ·  H {:.2}  ·  {}  ·  CLICK TO JUMP",
                 tile.start_offset,
+                tile.end_offset,
                 sec_str,
                 tile.entropy,
                 tile.class.label()
